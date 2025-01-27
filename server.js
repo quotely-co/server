@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Simple Test Route
+// Simple Test Routes
 app.get("/", (req, res) => {
   res.send("Hello, server is running!");
 });
