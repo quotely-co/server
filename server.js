@@ -8,7 +8,7 @@ const app = express();
 // Connect to MongoDB
 connectDB();  // Ensure this is called after .env is loaded
 
-// Middleware
+// Middleware 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
