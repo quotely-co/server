@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-const verifyTokenMiddleware = (req, res, next) => {
+const userToken = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -17,12 +17,7 @@ const verifyTokenMiddleware = (req, res, next) => {
     const decoded = jwt.verify(token, secretKey);
 
     req.user = decoded;
-    console.log(decoded);
-    
-    res.locals.userData = {
-      FactoryID: decoded.factoryId,
-      user: decoded.user,
-    };
+  
 
     next();
   } catch (error) {
@@ -31,4 +26,4 @@ const verifyTokenMiddleware = (req, res, next) => {
   }
 };
 
-module.exports = verifyTokenMiddleware;
+module.exports = userToken;

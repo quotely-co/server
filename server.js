@@ -34,7 +34,9 @@ app.get("/", (req, res) => {
 
 // ✅ Routes
 app.use("/api/auth", require("./routes/auth"));
-app.use("/api/user", require("./routes/User"));
+
+app.use("/api/user", require("./routes/User"))
+
 app.use("/api/factory", require("./routes/factory"));
 app.use("/api/payment", require("./routes/Payment"));
 app.use("/api/products", require("./routes/product"));

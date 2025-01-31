@@ -1,18 +1,21 @@
 const mongoose = require("mongoose");
 
-const factorySchema = new mongoose.Schema(
-  {
-    factoryName: { type: String, required: true }, // Factory's display name
-    logo_url: { type: String }, // URL to the factory's logo
-    brand_color: { type: String }, // Hex color code for branding
-    email: { type: String, required: true }, // Factory email
-    phone_number: { type: String, required: true }, // Factory contact number
-    address: { type: String, required: true },
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true } // Reference to the User model
-  },
-  {
-    timestamps: true,
-  }
-);
+const factorySchema = new mongoose.Schema({
+  name: { type: String, required: true, unique: true }, 
+  shopName: { type: String, required: true, unique: true }, 
+  email: { type: String, required: true, unique: true },
+  phone: { type: String, required: true },
+  password: { type: String, required: true }, 
+  address: { type: String, required: true },
+  logoUrl: { type: String }, 
+  brandColor: { type: String }, 
+  productIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
+  role: { type: String, default: "factory" }, 
+  isVerified: { type: Boolean, default: false }, 
+  otp: { type: String }, 
+  otpExpiry: { type: Date }, 
+  createdAt: { type: Date, default: Date.now }
+});
+
 
 module.exports = mongoose.model("Factory", factorySchema);

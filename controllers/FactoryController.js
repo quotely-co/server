@@ -61,7 +61,9 @@ exports.getFactory = async (req, res) => {
         const { id } = req.query;
         if (id) {
             // Fetch factory by ID
-            const factory = await Factory.findById(id);
+            const factory = await Factory.find({factoryName:id});
+        
+            
             if (!factory) {
                 return res.status(404).json({ message: "Factory not found" });
             }
