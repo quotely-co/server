@@ -91,7 +91,7 @@ exports.generatePdf = async (req, res) => {
         const doc = new PDFDocument({ margin: 50, size: 'A4' });
 
         res.setHeader("Content-Type", "application/pdf");
-        res.setHeader("Content-Disposition", `attachment; filename=${factory.factoryName.replace(/\s+/g, "_")}_quotation.pdf`);
+        res.setHeader("Content-Disposition", `attachment; filename=${factory.name.replace(/\s+/g, "_")}_quotation.pdf`);
         doc.pipe(res);
 
         // Add background color

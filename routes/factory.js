@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.post('/add-factory', AddFactory);
 router.get('/', getFactory);
-router.get('/generate-pdf',verifyTokenMiddleware, generatePdf);
+router.post('/generate-pdf', verifyTokenMiddleware, generatePdf);
 router.get('/factories', getAllFactory);
 router.delete('/factories/:id', deleteFactory);
 

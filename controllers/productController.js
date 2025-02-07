@@ -96,7 +96,7 @@ exports.getProduct = async (req, res) => {
     let products;
 
     if (req.query.id) {
-      console.log(req.query.id );
+      console.log(req.query.id +"hyyyyyyy");
       
       products = await Product.find({factoryId:req.query.id});
 
