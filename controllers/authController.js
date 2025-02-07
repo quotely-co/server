@@ -41,7 +41,7 @@ exports.sendOTPEmail = sendOTPEmail;
 exports.registerUser = async (req, res) => {
     const { username, email, password } = req.body;
     console.log(req.body);
-    
+
     if (!username || !email || !password) {
         return res.status(400).json({ success: false, message: "All fields are required" });
     }
@@ -129,11 +129,11 @@ exports.verifyOTP = async (req, res) => {
         await user.save();
 
         // Generate a JWT token
-        const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
+        const token = jwt.sign({ id: user._id, }, JWT_SECRET, { expiresIn: "7d" });
         res.status(200).json({
             message: "User verified successfully",
-            token, // Send JWT token
-            id: user._id, // Send user ID
+            token,
+            id: user._id,
         });
     } catch (error) {
         console.error(error);
@@ -141,34 +141,61 @@ exports.verifyOTP = async (req, res) => {
     }
 };
 
+
 exports.loginUser = async (req, res) => {
-    const { email, password } = req.body;
-    try {
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
+    const { email, password, is_customer } = req.body;
+
+    // for customer
+    if (is_customer) {
+        try {
+            const user = await User.findOne({ email });
+            if (!user) {
+                return res.status(404).json({ message: "User not found" });
+            }
+            const isPasswordValid = await bcrypt.compare(password, user.password);
+            if (!isPasswordValid) {
+                return res.status(400).json({ message: "Invalid credentials" });
+            }
+
+            const token = jwt.sign({ id: user._id, role: "customer" }, process.env.JWT_SECRET, {
+            });
+
+            res.status(200).json({ message: "Login successful", token });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: "Server error" });
         }
+    } else {
 
-        const factoryRecord = await Factories.findOne({ user: user._id });
-        if (!factoryRecord) {
-            return res.status(404).json({ message: "No corresponding record in the factory database" });
+        // for factory
+        try {
+            const user = await User.findOne({ email });
+            if (!user) {
+                return res.status(404).json({ message: "User not found" });
+            }
+
+            const factoryRecord = await Factories.findOne({ user: user._id });
+            if (!factoryRecord) {
+                return res.status(404).json({ message: "No corresponding record in the factory database" });
+            }
+
+            const isPasswordValid = await bcrypt.compare(password, user.password);
+            if (!isPasswordValid) {
+                return res.status(400).json({ message: "Invalid credentials" });
+            }
+
+            if (!user.isVerified) {
+                return res.status(400).json({ message: "User not verified" });
+            }
+
+            const token = jwt.sign({ user: user._id, factoryId: factoryRecord._id, role: "factory" }, process.env.JWT_SECRET, {
+            });
+
+            res.status(200).json({ message: "Login successful", token });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: "Server error" });
         }
-
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
-            return res.status(400).json({ message: "Invalid credentials" });
-        }
-
-        if (!user.isVerified) {
-            return res.status(400).json({ message: "User not verified" });
-        }
-
-        const token = jwt.sign({ user: user._id, factoryId: factoryRecord._id, role: "factory" }, process.env.JWT_SECRET, {
-        });
-
-        res.status(200).json({ message: "Login successful", token });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Server error" });
     }
+
 };

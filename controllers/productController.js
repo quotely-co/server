@@ -48,6 +48,9 @@ exports.addProduct = async (req, res) => {
       }
     }
 
+    console.log(req.user);
+    
+
     const factoryId = req.user.factoryId;
 
     // Create and save the product
@@ -93,6 +96,8 @@ exports.getProduct = async (req, res) => {
     let products;
 
     if (req.query.id) {
+      console.log(req.query.id );
+      
       products = await Product.find({factoryId:req.query.id});
 
       if (!products) {

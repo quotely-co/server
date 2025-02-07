@@ -8,7 +8,6 @@ const router = express.Router();
 router.get("/users", allUser);
 router.delete('/users/:id', deleteUser);
 router.post('/branding1', Branding1);
-
 router.get("/", userToken, getSingleUser)
 
 

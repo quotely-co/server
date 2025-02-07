@@ -10,6 +10,7 @@ exports.AddFactory = async (req, res) => {
     try {
         const { formData, userID } = req.body;
         const userRecord = await User.findById(userID);
+console.log(formData);
 
         if (userRecord) {
           console.log("User found:");
@@ -26,7 +27,7 @@ exports.AddFactory = async (req, res) => {
         }
 
         const newFactory = new Factory({
-            factoryName: businessName,
+            name: businessName,
             brand_color: brandColor,
             logo_url: logo,
             phone_number: phone,
@@ -60,8 +61,10 @@ exports.getFactory = async (req, res) => {
     try {
         const { id } = req.query;
         if (id) {
+            console.log(id);
+            
             // Fetch factory by ID
-            const factory = await Factory.find({factoryName:id});
+            const factory = await Factory.find({name:id});
         
             
             if (!factory) {
