@@ -17,7 +17,6 @@ const verifyTokenMiddleware = (req, res, next) => {
     const decoded = jwt.verify(token, secretKey);
 
     req.user = decoded;
-    console.log(decoded);
     
     res.locals.userData = {
       FactoryID: decoded.factoryId,

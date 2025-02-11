@@ -71,7 +71,6 @@ exports.getSingleUser = async (req, res) => {
 exports.generatePdf = async (req, res) => {
     try {
         const { factoryId, data } = req.body; 
-        console.log(factoryId);
         
         const factory = await Factories.findById(factoryId);
         const quotationData = Array.isArray(data) ? data : []; 
