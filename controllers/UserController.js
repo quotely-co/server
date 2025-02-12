@@ -70,99 +70,147 @@ exports.getSingleUser = async (req, res) => {
 
 exports.generatePdf = async (req, res) => {
     try {
-        const { factoryId, data } = req.body; 
-        
+        const { factoryId, data } = req.body;
         const factory = await Factories.findById(factoryId);
-        const quotationData = Array.isArray(data) ? data : []; 
-        const doc = new PDFDocument({ margin: 50, size: 'A4' });
+        const quotationData = Array.isArray(data) ? data : [];
+        
+        // Create PDF with A4 size and reduced margins for more space
+        const doc = new PDFDocument({ 
+            margin: 30, 
+            size: 'A4',
+            info: {
+                Title: `${factory.name} - Quotation`,
+                Author: factory.name
+            }
+        });
 
+        // Set response headers
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader("Content-Disposition", `attachment; filename=${factory.name.replace(/\s+/g, "_")}_quotation.pdf`);
         doc.pipe(res);
 
-        // Add background color
-        doc.save()
-            .fillColor('#ffffff')  // White background
-            .rect(0, 0, doc.page.width, doc.page.height)
-            .fill();
+        // Helper function to create table cell
+        const createTableCell = (x, y, width, height, text, options = {}) => {
+            const defaultOptions = {
+                fontSize: 9,
+                font: 'Helvetica',
+                align: 'center',
+                valign: 'center',
+                padding: 5,
+                backgroundColor: options.header ? '#006837' : null,
+                textColor: options.header ? '#ffffff' : '#000000'
+            };
+            const opts = { ...defaultOptions, ...options };
 
-        // Fetch and display the logo
+            if (opts.backgroundColor) {
+                doc.fillColor(opts.backgroundColor)
+                   .rect(x, y, width, height)
+                   .fill();
+            }
+
+            doc.fillColor(opts.textColor)
+               .font(opts.font)
+               .fontSize(opts.fontSize);
+
+            const textWidth = doc.widthOfString(text);
+            const textHeight = doc.currentLineHeight();
+            const textX = x + (width - textWidth) / 2;
+            const textY = y + (height - textHeight) / 2;
+
+            doc.text(text, textX, textY);
+        };
+
+        // Add header with logo and company details
         if (factory.logo_url) {
             try {
                 const logoResponse = await axios.get(factory.logo_url, { responseType: 'arraybuffer' });
                 const logoBuffer = Buffer.from(logoResponse.data, 'binary');
-                doc.image(logoBuffer, 50, 50, { width: 100, height: 100 });
-            } catch (logoError) {
-                console.error("Error loading logo:", logoError);
+                doc.image(logoBuffer, 30, 30, { width: 150 });
+            } catch (error) {
+                console.error("Error loading logo:", error);
             }
         }
 
-        doc.restore();
-
-        // Add factory details and table
-        doc.font('Helvetica-Bold').fontSize(20).text(factory.name, { align: 'center' });
+        // Company details on the right
+        doc.font('Helvetica-Bold').fontSize(16)
+           .text(factory.name, 250, 30, { align: 'right' });
+        
         doc.font('Helvetica').fontSize(10)
-            .text(`Email: ${factory.email}`, { align: 'center' })
-            .text(`Phone: ${factory.phone_number}`, { align: 'center' })
-            .text(`Address: ${factory.address}`, { align: 'center' })
-            .moveDown(1);
+           .text('PROFORMA INVOICE', 250, 55, { align: 'right' })
+           .text(`Date: ${new Date().toLocaleDateString()}`, 250, 70, { align: 'right' })
+           .text(`Email: ${factory.email}`, 250, 85, { align: 'right' })
+           .text(`Tel: ${factory.phone_number}`, 250, 100, { align: 'right' });
+
+        // Add green separator line
+        doc.strokeColor('#006837').lineWidth(2)
+           .moveTo(30, 140).lineTo(565, 140).stroke();
 
         // Table headers
-        doc.font('Helvetica-Bold').fontSize(12)
-            .text('Product', 50, 200)
-            .text('Variation', 200, 200)
-            .text('Quantity', 300, 200)
-            .text('Unit Price', 400, 200)
-            .text('Total', 500, 200);
-        doc.moveTo(50, 215).lineTo(550, 215).stroke();
+        const startY = 160;
+        const headers = [
+            { text: 'Description', width: 120 },
+            { text: 'Size', width: 80 },
+            { text: 'Material Weight', width: 70 },
+            { text: 'Print/Color', width: 60 },
+            { text: 'Qty', width: 50 },
+            { text: 'CTNS', width: 40 },
+            { text: 'Unit Price', width: 60 },
+            { text: 'Total', width: 55 }
+        ];
 
-        // Fetch product images asynchronously
-        const imageBuffers = await Promise.all(
-            quotationData.map(async (item) => {
-                if (item.image) {
-                    try {
-                        const response = await axios.get(item.image, { responseType: 'arraybuffer' });
-                        return Buffer.from(response.data, 'binary');
-                    } catch (error) {
-                        console.error(`Error fetching image for ${item.name}:`, error);
-                        return null;
-                    }
-                }
-                return null;
-            })
-        );
+        let currentX = 30;
+        headers.forEach(header => {
+            createTableCell(currentX, startY, header.width, 30, header.text, { header: true });
+            currentX += header.width;
+        });
 
-        let yPosition = 230;
+        // Table rows
+        let currentY = startY + 30;
         let grandTotal = 0;
 
         quotationData.forEach((item, index) => {
-            const imageBuffer = imageBuffers[index];
-            if (imageBuffer) {
-                try {
-                    doc.image(imageBuffer, 50, yPosition, { width: 50, height: 50 });
-                } catch (error) {
-                    console.error("Error adding product image:", error);
-                }
-            }
+            const rowHeight = 25;
+            currentX = 30;
+            const rowData = [
+                { text: item.name, width: headers[0].width },
+                { text: item.selectedVariation.size, width: headers[1].width },
+                { text: `${item.weight || '-'}`, width: headers[2].width },
+                { text: item.color || '-', width: headers[3].width },
+                { text: item.quantity.toString(), width: headers[4].width },
+                { text: item.cartons || '-', width: headers[5].width },
+                { text: `$${item.selectedVariation.basePrice.toFixed(3)}`, width: headers[6].width },
+                { text: `$${(item.selectedVariation.basePrice * item.quantity).toFixed(2)}`, width: headers[7].width }
+            ];
 
-            const productTotal = item.selectedVariation.basePrice * item.quantity;
-            grandTotal += productTotal;
+            rowData.forEach(cell => {
+                createTableCell(currentX, currentY, cell.width, rowHeight, cell.text, { 
+                    backgroundColor: index % 2 === 0 ? '#f5f5f5' : '#ffffff'
+                });
+                currentX += cell.width;
+            });
 
-            doc.font('Helvetica').fontSize(10)
-                .text(item.name, 200, yPosition)
-                .text(item.selectedVariation.size, 200, yPosition + 15)
-                .text(item.quantity.toString(), 300, yPosition)
-                .text(`$${item.selectedVariation.basePrice.toFixed(2)}`, 400, yPosition)
-                .text(`$${productTotal.toFixed(2)}`, 500, yPosition);
-
-            yPosition += 60;
+            grandTotal += item.selectedVariation.basePrice * item.quantity;
+            currentY += rowHeight;
         });
 
-        doc.font('Helvetica-Bold').fontSize(14)
-            .text(`Grand Total: $${grandTotal.toFixed(2)}`, 400, yPosition + 20);
+        // Add totals
+        currentY += 20;
+        doc.font('Helvetica-Bold').fontSize(11)
+           .text(`Grand Total: $${grandTotal.toFixed(2)}`, 400, currentY);
 
+        // Add payment terms
+        currentY += 40;
+        doc.font('Helvetica-Bold').fontSize(11)
+           .text('Payment Terms:', 30, currentY);
+        doc.font('Helvetica').fontSize(10)
+           .text('50% advance payment', 120, currentY)
+           .text('50% balance payment against B/L copy', 30, currentY + 20);
+
+        // Add footer
+        const footerY = doc.page.height - 50;
         doc.font('Helvetica').fontSize(8)
-            .text('Thank you for your business!', 50, doc.page.height - 100, { align: 'center' });
+           .text(factory.address, 30, footerY, { align: 'center' })
+           .text(`Tel: ${factory.phone_number} | Email: ${factory.email}`, 30, footerY + 15, { align: 'center' });
 
         doc.end();
     } catch (error) {
