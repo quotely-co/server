@@ -12,21 +12,28 @@ exports.AddFactory = async (req, res) => {
         const userRecord = await User.findById(userID);
 
         if (userRecord) {
-          console.log("User found:");
+            console.log("User found:");
         } else {
-          console.log("User not found");
-          throw new Error("User not found");
+            console.log("User not found");
+            return res.status(400).json({ success: false, message: "User not found" });
         }
-        
-        const { businessName, brandColor, logo, phone, email, address } = formData;
+
+        const { businessName, brandColor, logo, phone, email, address, username } = formData;
 
         // Ensure all required fields are present
         if (!businessName || !brandColor || !logo || !phone || !email || !address || !userID) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
+        const existingFactory = await Factory.findOne({ name: businessName });
+
+        if (existingFactory) {
+            return res.status(400).json({ success: false, message: "Factory name already exists" });
+        }
+
         const newFactory = new Factory({
             name: businessName,
+            shopName: username, // this one is unique
             brand_color: brandColor,
             logo_url: logo,
             phone_number: phone,
@@ -40,7 +47,7 @@ exports.AddFactory = async (req, res) => {
 
         // Generate a JWT token
         const token = jwt.sign(
-            { factoryId: savedFactory._id, user: userID , role:"factory" },
+            { factoryId: savedFactory._id, user: userID, role: "factory" },
             process.env.JWT_SECRET
         );
 
@@ -58,13 +65,17 @@ exports.AddFactory = async (req, res) => {
 
 exports.getFactory = async (req, res) => {
     try {
-        const { id } = req.query;
-        if (id) {
-            
+        const { shopName } = req.query;
+        if (shopName) {
             // Fetch factory by ID
-            const factory = await Factory.find({name:id});
-        
-            
+            const factory = await Factory.find({ shopName: shopName });
+            if (!factory) {
+                return res.status(404).json({ message: "Factory not found" });
+            }
+            return res.status(200).json(factory);
+        }
+        if (req.query.id) {
+            const factory = await Factory.find({ _id: req.query.id });
             if (!factory) {
                 return res.status(404).json({ message: "Factory not found" });
             }
