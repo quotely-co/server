@@ -11,7 +11,11 @@ const transporter = nodemailer.createTransport({
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
     },
+    tls: {
+        rejectUnauthorized: false,  // Disable certificate verification (use cautiously)
+    },
 });
+
 
 // Generate a random 6-digit OTP
 const generateOTP = () => {
@@ -90,6 +94,8 @@ exports.registerUser = async (req, res) => {
         );
         // Send OTP email
         await sendOTPEmail(email, otp);
+        console.log(otp);
+        
 
         res.status(201).json({
             success: true,
