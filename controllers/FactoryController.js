@@ -97,47 +97,57 @@ exports.generatePdf = async (req, res) => {
         const factory = await Factories.findById(factoryId);
         const quotationData = req.query.data ? JSON.parse(req.query.data) : [];
 
+        if (!factory) {
+            return res.status(404).json({ message: "Factory not found" });
+        }
+
         const doc = new PDFDocument({ margin: 50, size: 'A4' });
 
         res.setHeader("Content-Type", "application/pdf");
-        res.setHeader("Content-Disposition", `attachment; filename=${factory.name.replace(/\s+/g, "_")}_quotation.pdf`);
+        res.setHeader(
+            "Content-Disposition",
+            `attachment; filename=${factory.name.replace(/\s+/g, "_")}_quotation.pdf`
+        );
         doc.pipe(res);
 
-        // Add background color
+        // Background Color (Light Gray for contrast)
         doc.save()
-            .fillColor('#ffffff')  // White background
+            .fillColor('#f5f5f5') // Light gray
             .rect(0, 0, doc.page.width, doc.page.height)
             .fill();
+        doc.restore();
 
         // Fetch and display the logo
         if (factory.logo_url) {
             try {
                 const logoResponse = await axios.get(factory.logo_url, { responseType: 'arraybuffer' });
                 const logoBuffer = Buffer.from(logoResponse.data, 'binary');
-                doc.image(logoBuffer, 50, 50, { width: 100, height: 100 });
+                doc.image(logoBuffer, 50, 50, { width: 80, height: 80 });
             } catch (logoError) {
                 console.error("Error loading logo:", logoError);
             }
         }
 
-        doc.restore();
-
-        // Add factory details and table
-        doc.font('Helvetica-Bold').fontSize(20).text(factory.factoryName, { align: 'center' });
+        // Factory Information
+        doc.font('Helvetica-Bold').fontSize(18).text(factory.name, { align: 'right' });
         doc.font('Helvetica').fontSize(10)
-            .text(`Email: ${factory.email}`, { align: 'center' })
-            .text(`Phone: ${factory.phone_number}`, { align: 'center' })
-            .text(`Address: ${factory.address}`, { align: 'center' })
+            .text(`Email: ${factory.email}`, { align: 'right' })
+            .text(`Phone: ${factory.phone_number}`, { align: 'right' })
+            .text(`Address: ${factory.address}`, { align: 'right' })
             .moveDown(1);
 
+        doc.moveTo(50, 150).lineTo(550, 150).stroke(); // Divider line
+
         // Table headers
+        let yPosition = 170;
         doc.font('Helvetica-Bold').fontSize(12)
-            .text('Product', 50, 200)
-            .text('Variation', 200, 200)
-            .text('Quantity', 300, 200)
-            .text('Unit Price', 400, 200)
-            .text('Total', 500, 200);
-        doc.moveTo(50, 215).lineTo(550, 215).stroke();
+            .text('Image', 50, yPosition)
+            .text('Product', 150, yPosition)
+            .text('Variation', 300, yPosition)
+            .text('Quantity', 400, yPosition)
+            .text('Unit Price', 460, yPosition)
+            .text('Total', 520, yPosition);
+        doc.moveTo(50, 185).lineTo(550, 185).stroke();
 
         // Fetch product images asynchronously
         const imageBuffers = await Promise.all(
@@ -155,10 +165,15 @@ exports.generatePdf = async (req, res) => {
             })
         );
 
-        let yPosition = 230;
+        yPosition = 200;
         let grandTotal = 0;
 
         quotationData.forEach((item, index) => {
+            if (yPosition > 700) { // Add new page if content overflows
+                doc.addPage();
+                yPosition = 50;
+            }
+
             const imageBuffer = imageBuffers[index];
             if (imageBuffer) {
                 try {
@@ -172,20 +187,24 @@ exports.generatePdf = async (req, res) => {
             grandTotal += productTotal;
 
             doc.font('Helvetica').fontSize(10)
-                .text(item.name, 200, yPosition)
-                .text(item.selectedVariation.size, 200, yPosition + 15)
-                .text(item.quantity.toString(), 300, yPosition)
-                .text(`$${item.selectedVariation.basePrice.toFixed(2)}`, 400, yPosition)
-                .text(`$${productTotal.toFixed(2)}`, 500, yPosition);
+                .text(item.name, 150, yPosition)
+                .text(item.selectedVariation.size, 300, yPosition)
+                .text(item.quantity.toString(), 400, yPosition)
+                .text(`$${item.selectedVariation.basePrice.toFixed(2)}`, 460, yPosition)
+                .text(`$${productTotal.toFixed(2)}`, 520, yPosition);
 
             yPosition += 60;
         });
 
+        // Grand Total
+        doc.moveTo(50, yPosition).lineTo(550, yPosition).stroke();
+        yPosition += 10;
         doc.font('Helvetica-Bold').fontSize(14)
-            .text(`Grand Total: $${grandTotal.toFixed(2)}`, 400, yPosition + 20);
+            .text(`Grand Total: $${grandTotal.toFixed(2)}`, 400, yPosition);
 
-        doc.font('Helvetica').fontSize(8)
-            .text('Thank you for your business!', 50, doc.page.height - 100, { align: 'center' });
+        // Thank You Note
+        doc.font('Helvetica').fontSize(10)
+            .text('Thank you for your business!', 50, doc.page.height - 80, { align: 'center' });
 
         doc.end();
     } catch (error) {

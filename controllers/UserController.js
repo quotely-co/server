@@ -3,6 +3,8 @@ const User = require("../models/User");
 const Factories = require("../models/Factories");
 const PDFDocument = require("pdfkit");
 const axios = require('axios');
+require("dotenv").config();
+const nodemailer = require("nodemailer");
 
 exports.allUser = async (req, res) => {
     try {
@@ -70,9 +72,16 @@ exports.getSingleUser = async (req, res) => {
 
 exports.generatePdf = async (req, res) => {
     try {
-        const { factoryId, data } = req.body;
+        const { factoryId, data, email } = req.body; // You can pass the recipient email address here
         const factory = await Factories.findById(factoryId);
         const quotationData = Array.isArray(data) ? data : [];
+
+        if (!factory) {
+            return res.status(404).json({ message: "Factory not found" });
+        }
+
+        // Use brand color or default to green
+        const brandColor = factory.brand_color || "#006837";
         
         // Create PDF with A4 size and reduced margins for more space
         const doc = new PDFDocument({ 
@@ -97,7 +106,7 @@ exports.generatePdf = async (req, res) => {
                 align: 'center',
                 valign: 'center',
                 padding: 5,
-                backgroundColor: options.header ? '#006837' : null,
+                backgroundColor: options.header ? brandColor : null,
                 textColor: options.header ? '#ffffff' : '#000000'
             };
             const opts = { ...defaultOptions, ...options };
@@ -136,13 +145,13 @@ exports.generatePdf = async (req, res) => {
            .text(factory.name, 250, 30, { align: 'right' });
         
         doc.font('Helvetica').fontSize(10)
-           .text('PROFORMA INVOICE', 250, 55, { align: 'right' })
+           .text('Business', 250, 55, { align: 'right' })
            .text(`Date: ${new Date().toLocaleDateString()}`, 250, 70, { align: 'right' })
            .text(`Email: ${factory.email}`, 250, 85, { align: 'right' })
            .text(`Tel: ${factory.phone_number}`, 250, 100, { align: 'right' });
 
         // Add green separator line
-        doc.strokeColor('#006837').lineWidth(2)
+        doc.strokeColor(brandColor).lineWidth(2)
            .moveTo(30, 140).lineTo(565, 140).stroke();
 
         // Table headers
@@ -168,6 +177,22 @@ exports.generatePdf = async (req, res) => {
         let currentY = startY + 30;
         let grandTotal = 0;
 
+        // Fetch product images
+        const imageBuffers = await Promise.all(
+            quotationData.map(async (item) => {
+                if (item.image) {
+                    try {
+                        const response = await axios.get(item.image, { responseType: 'arraybuffer' });
+                        return Buffer.from(response.data, 'binary');
+                    } catch (error) {
+                        console.error(`Error fetching image for ${item.name}:`, error);
+                        return null;
+                    }
+                }
+                return null;
+            })
+        );
+
         quotationData.forEach((item, index) => {
             const rowHeight = 25;
             currentX = 30;
@@ -190,6 +215,17 @@ exports.generatePdf = async (req, res) => {
             });
 
             grandTotal += item.selectedVariation.basePrice * item.quantity;
+
+            // Add product image if available
+            const imageBuffer = imageBuffers[index];
+            if (imageBuffer) {
+                try {
+                    doc.image(imageBuffer, 30, currentY + 5, { width: 50, height: 50 });
+                } catch (error) {
+                    console.error("Error adding product image:", error);
+                }
+            }
+
             currentY += rowHeight;
         });
 
@@ -213,9 +249,42 @@ exports.generatePdf = async (req, res) => {
            .text(`Tel: ${factory.phone_number} | Email: ${factory.email}`, 30, footerY + 15, { align: 'center' });
 
         doc.end();
+
+        // Send email with PDF attachment
+      const transporter = nodemailer.createTransport({
+          service: "gmail",
+          auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS,
+          },
+          tls: {
+              rejectUnauthorized: false,  // Disable certificate verification (use cautiously)
+          },
+      });
+      
+        const mailOptions = {
+            from: 'shamilamiyan@gmail.com',
+            to: factory.email, // Recipient email
+            subject: `${factory.name} - Quotation`,
+            text: `Please find the attached quotation for ${factory.name}.`,
+            attachments: [
+                {
+                    filename: `${factory.name.replace(/\s+/g, "_")}_quotation.pdf`,
+                    content: doc
+                }
+            ]
+        };
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error('Error sending email:', error);
+            } else {
+                console.log('Email sent: ' + info.response);
+            }
+        });
+
     } catch (error) {
         console.error("Error generating PDF:", error);
         res.status(500).json({ message: "Error while generating the PDF" });
     }
 };
-
