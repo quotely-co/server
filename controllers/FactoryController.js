@@ -8,22 +8,18 @@ require("dotenv").config();
 
 exports.AddFactory = async (req, res) => {
     try {
-        const { formData, userID } = req.body;
-        const userRecord = await User.findById(userID);
+        const { formData } = req.body;
 
-        if (userRecord) {
-            console.log("User found:");
-        } else {
-            console.log("User not found");
-            return res.status(400).json({ success: false, message: "User not found" });
-        }
 
         const { businessName, brandColor, logo, phone, email, address, username } = formData;
 
         // Ensure all required fields are present
-        if (!businessName || !brandColor || !logo || !phone || !email || !address || !userID) {
+        if (!businessName || !brandColor || !logo || !phone || !email || !address ) {
             return res.status(400).json({ message: "All fields are required" });
         }
+        console.log('====================================');
+        console.log(businessName);
+        console.log('====================================');
 
         const existingFactory = await Factory.findOne({ name: businessName });
 
@@ -39,7 +35,6 @@ exports.AddFactory = async (req, res) => {
             phone_number: phone,
             email,
             address,
-            user: userID,
         });
 
         // Save the factory to the database
@@ -47,7 +42,7 @@ exports.AddFactory = async (req, res) => {
 
         // Generate a JWT token
         const token = jwt.sign(
-            { factoryId: savedFactory._id, user: userID, role: "factory" },
+            { factoryId: savedFactory._id, role: "factory" },
             process.env.JWT_SECRET
         );
 
