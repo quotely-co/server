@@ -14,11 +14,12 @@ exports.AddFactory = async (req, res) => {
         const { businessName, brandColor, logo, phone, email, address, username } = formData;
 
         // Ensure all required fields are present
-        if (!businessName || !brandColor || !logo || !phone || !email || !address ) {
+        if (!businessName || !brandColor  || !phone || !email || !address) {
             return res.status(400).json({ message: "All fields are required" });
         }
+
         console.log('====================================');
-        console.log(businessName);
+        console.log( businessName, brandColor, logo, phone, email, address, username);
         console.log('====================================');
 
         const existingFactory = await Factory.findOne({ name: businessName });
@@ -26,10 +27,11 @@ exports.AddFactory = async (req, res) => {
         if (existingFactory) {
             return res.status(400).json({ success: false, message: "Factory name already exists" });
         }
+     
 
         const newFactory = new Factory({
-            name: businessName,
-            shopName: username, // this one is unique
+            businessName,
+            username, // this one is unique
             brand_color: brandColor,
             logo_url: logo,
             phone_number: phone,
@@ -50,6 +52,7 @@ exports.AddFactory = async (req, res) => {
             message: "Branding details saved successfully",
             factoryId: savedFactory._id,
             token,
+            subdomain: username
         });
     } catch (error) {
         console.error("Error in AddFactory:", error);

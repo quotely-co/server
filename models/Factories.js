@@ -2,21 +2,22 @@ const mongoose = require("mongoose");
 
 const factorySchema = new mongoose.Schema(
   {
-    name: {
+    businessName: {
       type: String,
       trim: true,
       minlength: 3,
       maxlength: 100,
       match: /^[a-zA-Z0-9\s\-\&\,\.]+$/,
     }, // Example: "Prive Gems Pvt Ltd"
-    shopName: {
+    username: {
       type: String,
       required: true,
       unique: true,
       trim: true,
       minlength: 2,
       maxlength: 50,
-    }, // Unique shop name
+    }, // Unique shop name or the subdomain for the factory
+    // Example: "privegems"
     email: {
       type: String,
       required: true,

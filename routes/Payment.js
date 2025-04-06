@@ -5,6 +5,7 @@ const router = express.Router();
 
 // Stripe payment
 router.post("/create-payment-intent", paymentController.createStripePaymentIntent);
+router.post("/create-checkout-session", paymentController.createCheckoutSession);
 
 // Razorpay payment
 router.post("/create-order", paymentController.createRazorpayOrder);

@@ -8,15 +8,16 @@ const app = express();
 
 connectDB();
 
-// ✅ Configure CORS properly
 app.use(
   cors({
-    origin: "*", 
+    origin: "*" ,// Allow all subdomains of localhost
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true, // Allow credentials (cookies, auth headers)
+    credentials: true, // ✅ Enable sending cookies
   })
 );
+
+
 
 
 // ✅ Handle CORS preflight requests

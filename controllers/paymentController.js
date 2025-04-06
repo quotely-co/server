@@ -35,6 +35,41 @@ exports.createStripePaymentIntent = async (req, res) => {
     }
 };
 
+// Create Checkout Session for Stripe
+exports.createCheckoutSession = async (req, res) => {
+    try {
+        const { planId, planName, unitAmount, currency, interval } = req.body;
+        
+        // Create Checkout Session
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            line_items: [
+                {
+                    price_data: {
+                        currency: currency,
+                        product_data: {
+                            name: planName,
+                        },
+                        unit_amount: unitAmount,
+                        recurring: {
+                            interval: interval === 'month' ? 'month' : 'year',
+                        },
+                    },
+                    quantity: 1,
+                },
+            ],
+            mode: 'subscription',
+            success_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/payment/cancel`,
+        });
+
+        res.status(200).json({ sessionId: session.id });
+    } catch (error) {
+        console.error("Stripe Checkout Session Error:", error.message);
+        res.status(500).json({ error: "Failed to create checkout session." });
+    }
+};
+
 // Create Order for Razorpay
 exports.createRazorpayOrder = async (req, res) => {
     try {
