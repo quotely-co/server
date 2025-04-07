@@ -23,7 +23,7 @@
     "paypal-rest-sdk": "^1.8.1",
     "pdfkit": "^0.16.0",
     "razorpay": "^2.9.5",
-    "stripe": "^17.5.0"
+    "stripe": "^17.7.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"

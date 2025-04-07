@@ -4,8 +4,6 @@ const cors = require("cors");
 const connectDB = require("./config/db");
 
 const app = express();
-
-
 connectDB();
 
 app.use(
@@ -16,9 +14,6 @@ app.use(
     credentials: true, // ✅ Enable sending cookies
   })
 );
-
-
-
 
 // ✅ Handle CORS preflight requests
 app.options("*", cors());

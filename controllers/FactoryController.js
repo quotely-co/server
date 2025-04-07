@@ -9,8 +9,6 @@ require("dotenv").config();
 exports.AddFactory = async (req, res) => {
     try {
         const { formData } = req.body;
-
-
         const { businessName, brandColor, logo, phone, email, address, username } = formData;
 
         // Ensure all required fields are present
@@ -18,20 +16,15 @@ exports.AddFactory = async (req, res) => {
             return res.status(400).json({ message: "All fields are required" });
         }
 
-        console.log('====================================');
-        console.log( businessName, brandColor, logo, phone, email, address, username);
-        console.log('====================================');
-
         const existingFactory = await Factory.findOne({ name: businessName });
 
         if (existingFactory) {
             return res.status(400).json({ success: false, message: "Factory name already exists" });
         }
      
-
         const newFactory = new Factory({
             businessName,
-            username, // this one is unique
+            username, // this one is unique and this is the subdomain
             brand_color: brandColor,
             logo_url: logo,
             phone_number: phone,
