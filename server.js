@@ -32,13 +32,10 @@ app.get("/api/check-subdomain", async (req, res) => {
   const { subdomain } = req.query;
 
   if (!subdomain) return res.json({ valid: false });
-
+  
   const shop = await Factories.findOne({ username: subdomain, status: "active" });
-  console.log('====================================');
-  console.log(shop);
-  console.log('====================================');
   if (shop) {
-    res.json({ valid: true });
+    res.status(200).json({ valid: true });
   } else {
     res.json({ valid: false });
   }
