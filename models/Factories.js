@@ -31,6 +31,11 @@ const factorySchema = new mongoose.Schema(
       required: true,
       // match: /^\+?[1-9]\d{1,14}$/, // Supports international formats
     },
+    status:{
+      type: String,
+      enum: ["active", "inactive", "suspended"],
+      default: "active",
+    },
     address: {
       type: String,
       required: true,
