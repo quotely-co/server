@@ -9,15 +9,22 @@ connectDB();
 
 app.use(
   cors({
-    origin: "*",// Allow all subdomains of localhost
+    origin: ["https://www.quotely.shop"], // Allow only your frontend domain
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true, // ✅ Enable sending cookies
   })
 );
 
-// ✅ Handle CORS preflight requests
-app.options("*", cors());
+// ✅ Handle CORS preflight requests properly
+app.options("*", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "https://www.quotely.shop");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.sendStatus(200);
+});
+
 
 // ✅ Middleware
 app.use(express.json());
