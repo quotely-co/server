@@ -9,21 +9,29 @@ connectDB();
 
 app.use(
   cors({
-    origin: ["https://www.quotely.shop"], // Allow only your frontend domain
+    origin: ["https://www.quotely.shop", "http://localhost:5173"], // Allow only your frontend domain
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true, // ✅ Enable sending cookies
   })
 );
 
+
 // ✅ Handle CORS preflight requests properly
 app.options("*", (req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", "https://www.quotely.shop");
+  const allowedOrigins = ["https://www.quotely.shop", "http://localhost:5173"];
+  const origin = req.headers.origin;
+
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.sendStatus(200);
 });
+
 
 
 // ✅ Middleware
@@ -46,6 +54,12 @@ app.get("/api/check-subdomain", async (req, res) => {
   } else {
     res.json({ valid: false });
   }
+});
+
+app.use((req, res, next) => {
+  console.log("Incoming Request:", req.method, req.url);
+  console.log("Origin:", req.headers.origin);
+  next();
 });
 
 
