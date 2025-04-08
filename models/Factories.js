@@ -34,7 +34,14 @@ const factorySchema = new mongoose.Schema(
     status:{
       type: String,
       enum: ["active", "inactive", "suspended"],
-      default: "active",
+    },
+    paymentVerified: {
+      type: Boolean,
+      default: false,
+    },
+    paymentSessionId: {
+      type: String,
+      default: null,
     },
     address: {
       type: String,

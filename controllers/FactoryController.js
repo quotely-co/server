@@ -24,12 +24,13 @@ exports.AddFactory = async (req, res) => {
      
         const newFactory = new Factory({
             businessName,
-            username, // this one is unique and this is the subdomain
+            username,
             brand_color: brandColor,
             logo_url: logo,
             phone_number: phone,
             email,
             address,
+            status: "inactive",
         });
 
         // Save the factory to the database
@@ -232,3 +233,45 @@ exports.deleteFactory = async (req, res) => {
         res.status(500).json({ message: 'Internal Server Error' }); // Handle any server errors
     }
 };
+
+exports.activateAccount = async (req, res) => {
+    const { sessionId } = req.body;
+  
+    try {
+      if (!sessionId) {
+        return res.status(400).json({ success: false, message: "Missing session ID." });
+      }
+  
+      const userId = req.Factory?._id; // From authMiddleware
+      if (!userId) {
+        return res.status(401).json({ success: false, message: "Unauthorized." });
+      }
+  
+      // ✅ Find and update the user
+      const user = await Factories.findByIdAndUpdate(
+        userId,
+        {
+          status: "active",
+          paymentVerified: true,
+          paymentSessionId: sessionId,
+        },
+        { new: true }
+      );
+  
+      if (!user) {
+        return res.status(404).json({ success: false, message: "User not found." });
+      }
+  
+      res.status(200).json({
+        success: true,
+        message: "Account activated successfully.",
+        user,
+      });
+    } catch (error) {
+      console.error("Activate Account Error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Something went wrong while activating the account.",
+      });
+    }
+  };
