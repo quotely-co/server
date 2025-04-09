@@ -44,13 +44,12 @@ exports.AddFactory = async (req, res) => {
 
         // Set token to cookie
         res.cookie("token", token, {
-            httpOnly: true,                      // ✅ Hidden from JS
-            secure: process.env.NODE_ENV == "production", // ✅ Only over HTTPS in prod
-            sameSite: "None",                   // ✅ Required for cross-origin
-            domain: ".quotely.shop",            // ✅ Shares cookie across ALL subdomains
-            maxAge: 14 * 24 * 60 * 60 * 1000,   // ✅ 14 days
+            httpOnly: true,
+            secure: true, 
+            sameSite: "Lax", 
+            domain: ".quotely.shop", 
+            maxAge: 14 * 24 * 60 * 60 * 1000,
           });
-          
           
 
         res.status(200).json({
