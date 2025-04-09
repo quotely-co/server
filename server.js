@@ -14,10 +14,16 @@ const allowedOrigins = [
   /\.quotely\.shop$/
 ];
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://quotely.shop",
+  /\.quotely\.shop$/,
+];
+
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
+      if (!origin) return callback(null, true); // allow non-browser clients like Postman
 
       const isAllowed = allowedOrigins.some((allowed) =>
         allowed instanceof RegExp ? allowed.test(origin) : allowed === origin
@@ -30,12 +36,7 @@ app.use(
     credentials: true,
   })
 );
-app.use(
-  cors({
-    credentials: true,
-    origin: "https://quotely.shop", // Allow frontend requests
-  })
-);
+
 
 // CORS preflight (OPTIONS)
 app.options("*", (req, res) => {
