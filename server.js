@@ -30,6 +30,12 @@ app.use(
     credentials: true,
   })
 );
+app.use(
+  cors({
+    credentials: true,
+    origin: "https://quotely.shop", // Allow frontend requests
+  })
+);
 
 // CORS preflight (OPTIONS)
 app.options("*", (req, res) => {
