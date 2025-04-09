@@ -12,7 +12,7 @@ exports.AddFactory = async (req, res) => {
         const { businessName, brandColor, logo, phone, email, address, username } = formData;
 
         // Ensure all required fields are present
-        if (!businessName || !brandColor  || !phone || !email || !address) {
+        if (!businessName || !brandColor || !phone || !email || !address) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -21,7 +21,7 @@ exports.AddFactory = async (req, res) => {
         if (existingFactory) {
             return res.status(400).json({ success: false, message: "Factory name already exists" });
         }
-     
+
         const newFactory = new Factory({
             businessName,
             username,
@@ -41,6 +41,16 @@ exports.AddFactory = async (req, res) => {
             { factoryId: savedFactory._id, role: "factory" },
             process.env.JWT_SECRET
         );
+
+        // Set token to cookie
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV == "production",
+            sameSite: "Lax", // or "None" if needed (for cross-site requests)
+            domain: ".quotely.shop", // ✅ This makes it work for all subdomains!
+            maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
+          });
+          
 
         res.status(200).json({
             message: "Branding details saved successfully",
@@ -236,42 +246,42 @@ exports.deleteFactory = async (req, res) => {
 
 exports.activateAccount = async (req, res) => {
     const { sessionId } = req.body;
-  
+
     try {
-      if (!sessionId) {
-        return res.status(400).json({ success: false, message: "Missing session ID." });
-      }
-  
-      const userId = req.Factory?._id; // From authMiddleware
-      if (!userId) {
-        return res.status(401).json({ success: false, message: "Unauthorized." });
-      }
-  
-      // ✅ Find and update the user
-      const user = await Factories.findByIdAndUpdate(
-        userId,
-        {
-          status: "active",
-          paymentVerified: true,
-          paymentSessionId: sessionId,
-        },
-        { new: true }
-      );
-  
-      if (!user) {
-        return res.status(404).json({ success: false, message: "User not found." });
-      }
-  
-      res.status(200).json({
-        success: true,
-        message: "Account activated successfully.",
-        user,
-      });
+        if (!sessionId) {
+            return res.status(400).json({ success: false, message: "Missing session ID." });
+        }
+
+        const userId = req.Factory?._id; // From authMiddleware
+        if (!userId) {
+            return res.status(401).json({ success: false, message: "Unauthorized." });
+        }
+
+        // ✅ Find and update the user
+        const user = await Factories.findByIdAndUpdate(
+            userId,
+            {
+                status: "active",
+                paymentVerified: true,
+                paymentSessionId: sessionId,
+            },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found." });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Account activated successfully.",
+            user,
+        });
     } catch (error) {
-      console.error("Activate Account Error:", error);
-      res.status(500).json({
-        success: false,
-        message: "Something went wrong while activating the account.",
-      });
+        console.error("Activate Account Error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Something went wrong while activating the account.",
+        });
     }
-  };
+};
