@@ -6,7 +6,7 @@ const verifyFactory = require("../middleware/verifyFactory");
 const router = express.Router();
 
 
-router.post('/add-factory', AddFactory);
+router.post('/add-factory', AddFactory); // Add a new factory
 router.get('/', getFactory);
 router.post('/generate-pdf', verifyTokenMiddleware, generatePdf);
 router.get('/factories', getAllFactory);
