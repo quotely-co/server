@@ -8,7 +8,7 @@ const User = require("../models/User");
 const router = express.Router();
 
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const REDIRECT_URI = "http://localhost:5000/api/auth/google/callback";
+const REDIRECT_URI = "https://api.quotely.shop/api/auth/google/callback";
 
 // auth for factory
 router.post("/register", registerUser);
@@ -78,7 +78,7 @@ router.get("/google/callback", async (req, res) => {
             { expiresIn: "7d" }
           );
 
-          res.redirect(`http://localhost:5173/customer/login/success?token=${token}`);
+          res.redirect(`https://quotely.shop/customer/login/success?token=${token}`);
     } catch (err) {
         console.error("Google OAuth error:", err);
         res.status(500).send("Auth failed");
