@@ -5,10 +5,6 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY); // ✅ this line was the issue
-console.log('====================================');
-console.log(stripe);
-console.log('====================================');
-
 
 // Razorpay setup
 const razorpay = new Razorpay({

@@ -7,28 +7,20 @@ const Factories = require("./models/Factories");
 const app = express();
 connectDB();
 
-
 const allowedOrigins = [
   "http://localhost:5173",
   "https://quotely.shop",
+  "https://www.quotely.shop",
   /\.quotely\.shop$/
-];
-
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://quotely.shop",
-  /\.quotely\.shop$/,
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // allow non-browser clients like Postman
-
+      if (!origin) return callback(null, true);
       const isAllowed = allowedOrigins.some((allowed) =>
         allowed instanceof RegExp ? allowed.test(origin) : allowed === origin
       );
-
       callback(null, isAllowed ? true : new Error("Not allowed by CORS"));
     },
     methods: ["GET", "POST", "PUT", "DELETE"],
@@ -37,24 +29,19 @@ app.use(
   })
 );
 
+app.options("*", cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    const isAllowed = allowedOrigins.some((allowed) =>
+      allowed instanceof RegExp ? allowed.test(origin) : allowed === origin
+    );
+    callback(null, isAllowed ? true : new Error("Not allowed by CORS"));
+  },
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+}));
 
-// CORS preflight (OPTIONS)
-app.options("*", (req, res) => {
-  const origin = req.headers.origin;
-
-  const isAllowed = allowedOrigins.some((allowed) =>
-    allowed instanceof RegExp ? allowed.test(origin) : allowed === origin
-  );
-
-  if (isAllowed) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-  }
-
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.sendStatus(200);
-});
 
 // ✅ Middleware
 app.use(express.json());
