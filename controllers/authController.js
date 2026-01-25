@@ -152,7 +152,7 @@ exports.verifyOTP = async (req, res) => {
 exports.loginUser = async (req, res) => {
     const { email, is_customer } = req.body;
 
-    // for factory
+    // for factory 
     try {
         const user = await Factories.findOne({ email });
         if (!user) {

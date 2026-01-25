@@ -21,9 +21,11 @@ exports.addProduct = async (req, res) => {
       leadTime,
       unit,
       image,
+      specifications
     } = req.body;
-
-    // Validate required fields
+    
+    
+    // ✅ Required Fields Validation
     const requiredFields = { name, moq, category, leadTime, increment };
     const missingFields = Object.keys(requiredFields).filter(
       field => !requiredFields[field]
@@ -35,22 +37,22 @@ exports.addProduct = async (req, res) => {
         details: missingFields 
       });
     }
-
-    // Validate variations array
+    
+    // ✅ Variations Validation
     if (!Array.isArray(variations) || variations.length === 0) {
       return res.status(400).json({
         error: "At least one size variation is required"
       });
     }
-
+    
     const invalidVariations = variations.filter(v => !v.size || v.basePrice === undefined);
     if (invalidVariations.length > 0) {
       return res.status(400).json({
         error: "All variations must have both size and base price"
       });
     }
-
-    // Validate fees array (optional but must be properly formatted if present)
+    
+    // ✅ Fees Validation (Optional)
     if (fees && Array.isArray(fees)) {
       const invalidFees = fees.filter(fee => !fee.name || fee.amount === undefined);
       if (invalidFees.length > 0) {
@@ -59,8 +61,8 @@ exports.addProduct = async (req, res) => {
         });
       }
     }
-
-    // Validate CBM rates array (optional but must be properly formatted if present)
+    
+    // ✅ CBM Rates Validation (Optional)
     if (cbmRates && Array.isArray(cbmRates)) {
       const invalidCbmRates = cbmRates.filter(rate => !rate.quantity || rate.cbm === undefined);
       if (invalidCbmRates.length > 0) {
@@ -69,10 +71,10 @@ exports.addProduct = async (req, res) => {
         });
       }
     }
-
+    
     const factoryId = req.user.factoryId;
-
-    // Create and save the product
+    
+    // ✅ Construct product
     const newProduct = new Product({
       name,
       description: description || "",
@@ -85,9 +87,10 @@ exports.addProduct = async (req, res) => {
       leadTime: Number(leadTime),
       unit: unit || "pcs",
       image: image || "",
-      factoryId
+      factoryId,
+      specifications: specifications || {} // optional field
     });
-
+    
     const savedProduct = await newProduct.save();
 
     return res.status(201).json({
